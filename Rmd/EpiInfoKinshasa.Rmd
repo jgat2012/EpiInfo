@@ -7,24 +7,276 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+pacman::p_load(
+  rio,        # importing data  
+  here,       # relative file pathways
+  readxl,     # read excel
+  writexl,    # write excel
+  skimr,      # Exploring data
+  janitor,    # data cleaning and tables
+  lubridate,  # working with dates
+  epikit,     # age_categories() function
+  tidyverse,  # data management and visualization,
+  RODBC       # Odbc database connection
+)
+
+
+# use here from the here package
+here <- here::here
+# use clean_names from the janitor package
+clean_names <- janitor::clean_names
+
+# load functions used from R scripts
+source_path <- here("R", "RScripts.R")
+source(source_path,local = knitr::knit_global())
+
+data_folder <- "data"
+image_folder <- "images"
+output_folder <- "output"
+
+################################
+# 0. Importing Data            #
+################################
+
+con_luyindu<-RODBC::odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb)};DBQ=C:/Users/Gauthier Abdala/Documents/RWD/EpiInfo/Data/Database_KinshasaHivEpiInfoLuyindu_MSF_20211210.mdb")
+
+con_biyela<-RODBC::odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb)};DBQ=C:/Users/Gauthier Abdala/Documents/RWD/EpiInfo/Data/Database_KinshasaHivEpiInfoStJoseph_MSF_2021210.mdb")
+
+adm_biy_raw <- RODBC::sqlFetch(con_biyela,"IPDSTJOSEPH2")  #Admission information
+exam_biy_raw <- RODBC::sqlFetch(con_biyela,"IPDSTJOSEPH3") #Exam information
+disc_biy_raw <- RODBC::sqlFetch(con_biyela,"IPDSTJOSEPH1") #Anamnese and discharge information
+
+adm_luy_raw <- RODBC::sqlFetch(con_luyindu,"IPDLUYINDU1")  #Admission information
+exam_luy_raw <- RODBC::sqlFetch(con_luyindu,"IPDLUYINDU2") #Exam information
+disc_luy_raw <- RODBC::sqlFetch(con_luyindu,"IPDLUYINDU3") #Anamnese and discharge information
+
+
+
+###############################
+####       Cleaning        ####
+# 1. Cleaning column names    #
+###############################
+adm_biy <- adm_biy_raw %>% janitor::clean_names()
+exam_biy <- exam_biy_raw %>% janitor::clean_names()
+disc_biy <- disc_biy_raw %>% janitor::clean_names()
+
+adm_luy <- adm_luy_raw %>% janitor::clean_names()
+exam_luy <- exam_luy_raw %>% janitor::clean_names()
+disc_luy <- disc_luy_raw %>% janitor::clean_names()
+
+###########################################
+# 2. Select,add and/or re order/rename columns#
+###########################################
+
+# St JOSEPH BIYELA          #
+#############################
+adm_biy <- adm_biy %>%
+  mutate( #Adding new columns
+    date_adm = str_c(anne,sep = "-",mois,jour),
+  ) %>%
+  rename( #Renaming columns
+    hospi_ant      = hospitalisationsantrieures,
+    patient_no     = numrodedossier,
+    origine_patient= origine,
+    tiernet_no     = numro_tiernet,
+    ref_fosa       = referen_ip_dpar_fosa,
+    suivi_fosa     = fos_adesuivi_arv,
+    synd_adm       = syndrmedadmission,
+    arrive_mort     = maladearrivmort
+    
+  ) %>%
+  select( #Select columns
+    global_record_id, date_adm, patient_no, sexe, 
+    age, origine_patient, ref_fosa, suivi_fosa, synd_adm, arrive_mort
+  )
+
+exam_biy <- exam_biy %>%
+  rename( #Renaming columns
+    cd4_date        = date_cd4admission,
+    cd4_valeur      = valeur_cd4admission
+  ) %>%
+  select( #Select columns
+    global_record_id, stade_oms, xpert, lam, crag_sang,crag_csf, cd4_date, cd4_valeur
+  )
+
+disc_biy <- disc_biy %>%
+  rename( #Renaming columns
+    hist_arv       = histoire_arv,           #patient status on ARV
+    periode_int    = siinterrompu,          #If interrupted, period of interruption
+    diag_vih_date  = datediagnostic1,       #HIV Diagnpstic date
+    debut_arv_date = datedbut_arv,          #ARV Start Date
+    ligne_arv_adm  = lignedes_ar_vencours,  #Current ARV line
+    tb_ttt_adm     = t_bencoursdetraitement,#On TB treatment during admission
+    crypto_ttt_adm = cryptoencoursdetraitementladmission, #on Crypto treatment during admission
+    fluco_ttt_adm  = prohylaxieflucoladmission, #on Fluco Treatment during admission
+    sortie_date    = datesortie,
+    sortie_mode    = modedesortie,
+    diag_sortie_pr = diagnosticprincipallasortie,
+    synd_sortie_pr = syndrome1lasortie,
+    diag_sortie_sec= n2nddiagnosticlasortie,
+    synd_sortie_sec= syndrome2lasortie,
+    appr_cv        = appreciationcv,
+    cd4_adm_date   = date_cd4admission1,
+    cd4_adm_valeur     = valeur_cd4admission1,
+    cv_adm_date    = date_cv_admission,
+    cv_adm_valeur      = valeur_cv_admission
+    
+  ) %>%
+  select( #Select columns
+    global_record_id, hist_arv, periode_int, diag_vih_date, debut_arv_date, ligne_arv_adm, tb_ttt_adm, crypto_ttt_adm, 
+    fluco_ttt_adm, sortie_date, sortie_mode, diag_sortie_pr, synd_sortie_pr, diag_sortie_sec, synd_sortie_sec, appr_cv,
+    cd4_adm_date, cd4_adm_valeur, cv_adm_date, cv_adm_valeur
+  )
+
+# LUYINDU                   #
+#############################
+adm_luy <- adm_luy %>%
+  mutate( #Adding new columns
+    date_adm = str_c(anne,sep = "-",mois,jour),
+  ) %>%
+  rename( #Renaming columns
+    hospi_ant      = hospitalisationsantrieures,
+    patient_no     = numrodedossier,
+    origine_patient= origine,
+    tiernet_no     = numro_tiernet,
+    ref_fosa       = referen_ip_dpar_fosa,
+    suivi_fosa     = fos_adesuivi_arv,
+    synd_adm       = syndromedadmission,
+    arrive_mort     = maladearrivmort
+    
+  ) %>%
+  
+  select( #Select columns
+    global_record_id, date_adm, patient_no, sexe, 
+    age, origine_patient, ref_fosa, suivi_fosa, synd_adm, arrive_mort
+  )
+
+
+exam_luy <- exam_luy %>%
+  rename( #Renaming columns
+    cd4_date        = date_cd4admission,
+    cd4_valeur      = valeur_cd4admission,
+    crag_sang       = sang,
+    crag_csf        = csf
+  ) %>%
+  select( #Select columns
+    global_record_id, stade_oms, xpert, lam, crag_sang,crag_csf, cd4_date, cd4_valeur
+  )
+
+disc_luy <- disc_luy %>%
+  mutate( #Adding new columns
+    crypto_ttt_adm = NA, #New column added as it does not exist
+    fluco_ttt_adm  = NA, #New column added as it does not exist
+  ) %>%
+  rename( #Renaming columns
+    hist_arv       = histoire_arv,           #patient status on ARV
+    periode_int    = siinterrompu,          #If interrupted, period of interruption
+    diag_vih_date  = datediagnostic,        #HIV Diagnpstic date
+    debut_arv_date = datedbut_arv,          #ARV Start Date
+    ligne_arv_adm  = lignedes_ar_vencours,  #Current ARV line
+    tb_ttt_adm     = t_bencoursdetraitement,#On TB treatment during admission
+    sortie_date    = datesortie,
+    sortie_mode    = modedesortie,
+    diag_sortie_pr = syndrome2lasortie1,
+    synd_sortie_pr = syndrome1lasortie,
+    diag_sortie_sec= n2nddiagnosticlasortie,
+    synd_sortie_sec= syndrome2lasortie,
+    appr_cv        = appreciationcv,
+    cd4_adm_date   = date_cd4admission1,
+    cd4_adm_valeur     = valeur_cd4admission1,
+    cv_adm_date    = date_cv_admission,
+    cv_adm_valeur      = valeur_cv_admission
+    
+  ) %>%
+  select( #Select columns
+    global_record_id, hist_arv, periode_int, diag_vih_date, debut_arv_date, ligne_arv_adm, tb_ttt_adm, crypto_ttt_adm, 
+    fluco_ttt_adm, sortie_date, sortie_mode, diag_sortie_pr, synd_sortie_pr, diag_sortie_sec, synd_sortie_sec, appr_cv,
+    cd4_adm_date, cd4_adm_valeur, cv_adm_date, cv_adm_valeur
+  )
+
+#####################################
+# 3. Cleaning empty/null values     #
+#####################################
+
+adm_biy  <- trim_data_columns(adm_biy)
+adm_biy[is.null(adm_biy)  | adm_biy == "NULL" | adm_biy == ""] <- NA
+exam_biy <- trim_data_columns(exam_biy)
+exam_biy[is.null(exam_biy)  | exam_biy == "NULL" | exam_biy == ""] <- NA
+disc_biy <- trim_data_columns(disc_biy)
+disc_biy[is.null(disc_biy)  | disc_biy == "NULL" | disc_biy == ""] <- NA
+
+adm_luy  <- trim_data_columns(adm_luy)
+adm_luy[is.null(adm_luy)  | adm_luy == "NULL" | adm_luy == ""] <- NA
+exam_luy <- trim_data_columns(exam_luy)
+exam_luy[is.null(exam_luy)  | exam_luy == "NULL" | exam_luy == ""] <- NA
+disc_luy <- trim_data_columns(disc_luy)
+disc_luy[is.null(disc_luy)  | disc_luy == "NULL" | disc_luy == ""] <- NA
+
+
+#####################################
+# 4. Merge tables into one/facility #
+#####################################
+biyela_data <- left_join(adm_biy,exam_biy,by = "global_record_id") %>%
+  left_join(disc_biy,by = "global_record_id")
+
+luyindu_data <- left_join(adm_luy,exam_luy,by = "global_record_id") %>%
+  left_join(disc_luy,by = "global_record_id")
+
+#####################################
+# 5. Convert columns classes        #
+#####################################
+
+biyela_data <- biyela_data %>%
+  mutate(across(.cols = everything(), .fns = as.character)) %>% #Convert all columns into character
+  mutate(
+    date_adm      = parse_date(date_adm,"%Y-%m-%d"),
+    age           = parse_number(age),
+    cd4_date      = parse_date(cd4_date,"%Y-%m-%d"),
+    cd4_valeur    = parse_number(cd4_valeur),
+    diag_vih_date = parse_date(diag_vih_date,"%Y-%m-%d"),
+    debut_arv_date= parse_date(debut_arv_date,"%Y-%m-%d"),
+    sortie_date   = parse_date(sortie_date,"%Y-%m-%d"),
+    cd4_adm_date  = parse_date(cd4_adm_date,"%Y-%m-%d"),
+    cd4_adm_valeur= parse_number(cd4_adm_valeur),
+    cv_adm_date   = parse_date(cv_adm_date,"%Y-%m-%d"),
+    cv_adm_valeur = parse_number(cv_adm_valeur),
+  ) %>%
+  mutate(
+    date_adm      = as.Date(as.numeric(date_adm),origin ="1970-01-01"),
+    cd4_date      = as.Date(as.numeric(cd4_date),origin ="1970-01-01"),
+    diag_vih_date = as.Date(as.numeric(diag_vih_date),origin ="1970-01-01"),
+    debut_arv_date= as.Date(as.numeric(debut_arv_date),origin ="1970-01-01"),
+    sortie_date   = as.Date(as.numeric(sortie_date),origin ="1970-01-01"),
+    cd4_adm_date  = as.Date(as.numeric(cd4_adm_date),origin ="1970-01-01"),
+    cv_adm_date   = as.Date(as.numeric(cv_adm_date),origin ="1970-01-01"),
+  )
+
+luyindu_data <- luyindu_data %>%
+  mutate(across(.cols = everything(), .fns = as.character)) %>% #Convert all columns into character
+  mutate(
+    date_adm      = parse_date(date_adm,"%Y-%m-%d"),
+    age           = parse_number(age),
+    cd4_date      = parse_date(cd4_date,"%Y-%m-%d"),
+    cd4_valeur    = parse_number(cd4_valeur),
+    diag_vih_date = parse_date(diag_vih_date,"%Y-%m-%d"),
+    debut_arv_date= parse_date(debut_arv_date,"%Y-%m-%d"),
+    sortie_date   = parse_date(sortie_date,"%Y-%m-%d"),
+    cd4_adm_date  = parse_date(cd4_adm_date,"%Y-%m-%d"),
+    cd4_adm_valeur= parse_number(cd4_adm_valeur),
+    cv_adm_date   = parse_date(cv_adm_date,"%Y-%m-%d"),
+    cv_adm_valeur = parse_number(cv_adm_valeur),
+  ) %>%
+  mutate(
+    date_adm      = as.Date(as.numeric(date_adm),origin ="1970-01-01"),
+    cd4_date      = as.Date(as.numeric(cd4_date),origin ="1970-01-01"),
+    diag_vih_date = as.Date(as.numeric(diag_vih_date),origin ="1970-01-01"),
+    debut_arv_date= as.Date(as.numeric(debut_arv_date),origin ="1970-01-01"),
+    sortie_date   = as.Date(as.numeric(sortie_date),origin ="1970-01-01"),
+    cd4_adm_date  = as.Date(as.numeric(cd4_adm_date),origin ="1970-01-01"),
+    cv_adm_date   = as.Date(as.numeric(cv_adm_date),origin ="1970-01-01"),
+  )
+
+head(luyindu_data)
+
 ```
-
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
