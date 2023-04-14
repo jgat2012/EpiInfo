@@ -1,7 +1,7 @@
 ---
 title: "EpiInfoKin"
 author: "Gauthier A."
-date: "20/03/2023"
+date: "28/03/2023"
 output:
   html_document: default
   pdf_document: default
@@ -56,13 +56,13 @@ source(here("R", "EpiInfoCleaning.R"),local = knitr::knit_global())
 luyindu_data<-luyindu_data %>%
   mutate(
     r_type     = report_type,
-    period_adm = if_else(r_type =="trimestriel",quar_adm,parse_number(format(dateadm, "%Y.%m")))
+    period_disc = if_else(r_type =="trimestriel",quar_disc,parse_number(format(datesortie, "%Y.%m")))
   )
 
 biyela_data<-biyela_data %>%
   mutate(
     r_type     = report_type,
-    period_adm = if_else(r_type =="trimestriel",quar_adm,parse_number(format(dateadm, "%Y.%m")))
+    period_disc = if_else(r_type =="trimestriel",quar_disc,parse_number(format(datesortie, "%Y.%m")))
   )
 
 ```
@@ -79,12 +79,16 @@ biyela_data<-biyela_data %>%
 luyindu_summary<- luyindu_data %>%
   filter(
     ## Only filter admissions for reporting period
-    dateadm >=start_period & dateadm <=end_period
+    datesortie >=start_period & datesortie <=end_period
   ) %>%
   
-  group_by(facility, period_adm) %>%
+  group_by(facility, period_disc) %>%
   summarise(
-    n_adm       =  n(),
+    n_disc       =  n(),
+    n_adm_prev_per= sum(
+      period_adm <period_disc,
+      na.rm = TRUE
+    ),
     cv_adm_elig = sum(
                     (age>1) &             # Exclude exposed babies
                     (histoire_arv ==1)&   # Exclude patients not on ARV (0) & interrupted (2)
@@ -149,9 +153,7 @@ luyindu_summary<- luyindu_data %>%
                     (sang == 0 | sang == 1)             # Check that crags value is pos(0) or neg(1)
                     ,na.rm=TRUE
                   ),
-    `%crag_fait`  = label_percent(0.1)(crag_fait/crag_adm_elig),
-    adm_w_issue   = sum((!is.na(dateadm) & !is.na(datesortie))# Patients admitted and discharged (need to add # of those not discharged)
-                        ,na.rm = TRUE), 
+    `%crag_fait`  = label_percent(0.1)(crag_fait/crag_adm_elig), 
     died          = sum(
                     (modedesortie == 3)           # Only pick deceased patients (3)
                     ,na.rm = TRUE
@@ -166,9 +168,9 @@ luyindu_summary<- luyindu_data %>%
                     diff_adm_disc > 2    # Only include discharges within 48h
                     ,na.rm = TRUE
                   ),
-    `%mortality`  = label_percent(0.1)(died/adm_w_issue),
-    `%mort_lt_48h`= label_percent(0.1)(died_lt_48h/adm_w_issue),
-    `%mort_gt_48h`= label_percent(0.1)(died_gt_48h/adm_w_issue),
+    `%mortality`  = label_percent(0.1)(died/n_disc),
+    `%mort_lt_48h`= label_percent(0.1)(died_lt_48h/n_disc),
+    `%mort_gt_48h`= label_percent(0.1)(died_gt_48h/n_disc),
   )
 
 #summary(biyela_summary)
@@ -185,12 +187,16 @@ biyela_summary<- biyela_data %>%
   
   filter(
     ## Only filter admissions for reporting period
-    dateadm >=start_period & dateadm <=end_period
+    datesortie >=start_period & datesortie <=end_period
   ) %>%
   
-  group_by(facility,period_adm) %>%
+  group_by(facility,period_disc) %>%
   summarise(
-    n_adm       =  n(),
+    n_disc       =  n(),
+    n_adm_prev_per= sum(
+      period_adm <period_disc,
+      na.rm = TRUE
+    ),
     cv_adm_elig = sum(
                     #(age>1) &             # Exclude exposed babies
                     (histoire_arv ==1)&   # Exclude patients not on ARV (0) & interrupted (2)
@@ -268,9 +274,6 @@ biyela_summary<- biyela_data %>%
                     ,na.rm=TRUE
                   ),
     `%crag_fait`  = label_percent(0.1)(crag_fait/crag_adm_elig),
-    adm_w_issue   = sum((!is.na(dateadm) & !is.na(datesortie))# admitted and discharged 
-                        # TODO (need to add # of those not discharged)
-                        ,na.rm = TRUE), 
     died          = sum(
                     (modedesortie == 3)           # Only pick deceased patients (3)
                     ,na.rm = TRUE
@@ -285,9 +288,9 @@ biyela_summary<- biyela_data %>%
                     diff_adm_disc > 2             # Only include discharges within 48h
                     ,na.rm = TRUE
                   ),
-    `%mortality`  = label_percent(0.1)(died/adm_w_issue),
-    `%mort_lt_48h`= label_percent(0.1)(died_lt_48h/adm_w_issue),
-    `%mort_gt_48h`= label_percent(0.1)(died_gt_48h/adm_w_issue),
+    `%mortality`  = label_percent(0.1)(died/n_disc),
+    `%mort_lt_48h`= label_percent(0.1)(died_lt_48h/n_disc),
+    `%mort_gt_48h`= label_percent(0.1)(died_gt_48h/n_disc),
   )
 
 ## Export data to Excel
