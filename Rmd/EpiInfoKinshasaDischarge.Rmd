@@ -74,116 +74,229 @@ biyela_data<-biyela_data %>%
 ###########################      II. ANALYSIS   #############################
 #############################################################################
 
+# 
+# 
+# luyindu_summary<- luyindu_data %>%
+#   filter(
+#     ## Only filter admissions for reporting period
+#     datesortie >=start_period & datesortie <=end_period
+#   ) %>%
+#   
+#   group_by(facility, period_disc) %>%
+#   summarise(
+#     n_disc       =  n(),
+#     n_adm_prev_per= sum(
+#       period_adm <period_disc,
+#       na.rm = TRUE
+#     ),
+#     cv_adm_elig = sum(
+#                     (age>1) &             # Exclude exposed babies
+#                     (histoire_arv ==1)&   # Exclude patients not on ARV (0) & interrupted (2)
+#                     (jours_arv >180)      # Exclude patients with less than 180 days(6M) on ART
+#                     #(dateadm - date_cv_admission) Q/ Comment savoir si la derniere CV etait <3M?
+#                     ,na.rm = TRUE
+#                     ),
+#     cv_fait    = sum(
+#                     (age>1) &                     # Exclude exposed babies
+#                     (histoire_arv ==1)&           # Exclude patients not on ARV (0) & interrupted (2)
+#                     (jours_arv >=180) &            # Exclude patients with less than 180 days(6M) on ART
+#                     (datedbutdelaligne_arv - dateadm)>=180 & #Exclude patient with less than 180 days(6M) on ARV line
+#                     #(dateadm - date_cv_admission) Q/ Comment savoir si la derniere CV etait <3M?
+#                     !is.na(valeur_cv_admission) #&  # Check that there is value for VL
+#                     #(date_cv_admission - dateadm) <=2 # Check if VL date is less than 2 days(48h)
+#                       ,na.rm = TRUE
+#                   ),
+#     
+#     `%cv_fait` = label_percent(0.1)(cv_fait/cv_adm_elig),
+#     tot_cv_fait= sum(!is.na(valeur_cv_admission),na.rm = TRUE),#&             # Get total VL done
+#     cd4_adm_elig =  sum(
+#                     (age>1)                           # Exclude exposed babies
+#                     #((dateadm - date_cd4_admission)> Q/ Comment savoir la dernier CD4 etait <3M?
+#                     ,na.rm=TRUE
+#                   ),
+#     cd4_fait     =   sum(
+#                     (age>1) &                         # Exclude exposed babies
+#                     #((dateadm - date_cd4_admission)> Q/ Comment savoir la dernier CD4 etait <3M?
+#                     !is.na(valeur_cd4admission)&      # Check that there is value for CD$
+#                     (date_cd4admission - dateadm) <=2 # Check if CD4 date is less than 2 days(48h)
+#                     ,na.rm = TRUE
+#                   ),
+#     `%cd4_fait`  = label_percent(0.1)(cd4_fait/cd4_adm_elig),
+#     lam_adm_elig = sum(
+#                     (age>1) &                         # Exclude exposed babies
+#                     (valeur_cd4admission < 200) &                # Exclue patients with CD4 >=200  
+#                     (t_bencoursdetraitement == 1)     # Eclude patients who are under tb treatment
+#                     # Q/ Comment savoir fin traitement TB endéans 1 mois?
+#                     ,na.rm=TRUE
+#                   ),
+#     lam_fait     = sum(
+#                     (age>1) &                         # Exclude exposed babies
+#                     (valeur_cd4admission < 200) &     # Exclue patients with CD4 >=200  
+#                     (t_bencoursdetraitement == 0) &   # Eclude patients who are under tb treatment
+#                     # Q/ Comment savoir fin traitement TB endéans 1 mois?
+#                     (lam == 0 | lam == 1)             # Check that lam value is pos(0) or neg(1)
+#                     ,na.rm=TRUE
+#                   ),
+#     `%lam_fait`  = label_percent(0.1)(lam_fait/lam_adm_elig),
+#     crag_adm_elig = sum(
+#                     (age>1) &                        # Exclude exposed babies
+#                     (valeur_cd4admission < 200)      # Exclue patients with CD4 >=200  
+#                     # Q/ Comment savoir si sous traitement crypto?
+#                     # Q/ Comment savoir si sous fluco?
+#                     ,na.rm=TRUE
+#                   ),
+#     crag_fait     = sum(
+#                     (age>1) &                           # Exclude exposed babies
+#                     (valeur_cd4admission < 200) &                  # Exclue patients with CD4 >=200  
+#                     # Q/ Comment savoir si patient sous ?
+#                     # Q/ Comment savoir si patient sous ttt crypto?
+#                     (sang == 0 | sang == 1)             # Check that crags value is pos(0) or neg(1)
+#                     ,na.rm=TRUE
+#                   ),
+#     `%crag_fait`  = label_percent(0.1)(crag_fait/crag_adm_elig), 
+#     died          = sum(
+#                     (modedesortie == 3)           # Only pick deceased patients (3)
+#                     ,na.rm = TRUE
+#                   ),
+#     died_lt_48h   = sum(
+#                     (modedesortie == 3)&          # Only pick deceased patients (3)
+#                     diff_adm_disc <= 2   # Only include discharges within 48h
+#                     ,na.rm = TRUE
+#                           ),
+#     died_gt_48h   = sum(
+#                     (modedesortie == 3)&          # Only pick deceased patients (3)
+#                     diff_adm_disc > 2    # Only include discharges within 48h
+#                     ,na.rm = TRUE
+#                   ),
+#     `%mortality`  = label_percent(0.1)(died/n_disc),
+#     `%mort_lt_48h`= label_percent(0.1)(died_lt_48h/n_disc),
+#     `%mort_gt_48h`= label_percent(0.1)(died_gt_48h/n_disc),
+#   )
+# 
+# #summary(biyela_summary)
+# 
+# data_test <- biyela_data %>%
+#   filter(
+#     (age>1)                           # Exclude exposed babies
+#                     #((dateadm - date_cd4_admission)> Q/ Comment savoir la dernier CD4 etait <3M?
+#                   
+#   )
+#str(biyela_data)
 
-
-luyindu_summary<- luyindu_data %>%
+biyela_linelist <- biyela_data %>%
   filter(
     ## Only filter admissions for reporting period
     datesortie >=start_period & datesortie <=end_period
   ) %>%
   
-  group_by(facility, period_disc) %>%
-  summarise(
-    n_disc       =  n(),
-    n_adm_prev_per= sum(
-      period_adm <period_disc,
-      na.rm = TRUE
+  mutate(
+    ## Check eligibility for VL
+    vl_elig = case_when(
+      (
+        #(age>1) &             # Exclude exposed babies
+        (histoire_arv ==1)&   # Exclude patients not on ARV (0) & interrupted (2)
+        (jours_arv >180)      # Exclude patients with less than 180 days(6M) on ART
+        #(dateadm - date_cv_admission) Q/ Comment savoir si la derniere CV etait <3M?
+        # Q/ Periode interruption doit intervenir?
+      ) ~ "Oui",
+      TRUE ~ "Non"
     ),
-    cv_adm_elig = sum(
-                    (age>1) &             # Exclude exposed babies
-                    (histoire_arv ==1)&   # Exclude patients not on ARV (0) & interrupted (2)
-                    (jours_arv >180)      # Exclude patients with less than 180 days(6M) on ART
-                    #(dateadm - date_cv_admission) Q/ Comment savoir si la derniere CV etait <3M?
-                    ,na.rm = TRUE
-                    ),
-    cv_fait    = sum(
-                    (age>1) &                     # Exclude exposed babies
-                    (histoire_arv ==1)&           # Exclude patients not on ARV (0) & interrupted (2)
-                    (jours_arv >=180) &            # Exclude patients with less than 180 days(6M) on ART
-                    (datedbutdelaligne_arv - dateadm)>=180 & #Exclude patient with less than 180 days(6M) on ARV line
-                    #(dateadm - date_cv_admission) Q/ Comment savoir si la derniere CV etait <3M?
-                    !is.na(valeur_cv_admission) #&  # Check that there is value for VL
-                    #(date_cv_admission - dateadm) <=2 # Check if VL date is less than 2 days(48h)
-                      ,na.rm = TRUE
-                  ),
+    vl_done = case_when(
+      (
+        #(age>1) &                     # Exclude exposed babies
+        (histoire_arv ==1)&           # Exclude patients not on ARV (0) & interrupted (2)
+        (jours_arv >180) &            # Exclude patients with less than 180 days(6M) on ART
+        #(dateadm - date_cv_admission) Q/ Comment savoir si la derniere CV etait <3M?
+        !is.na(valeur_cv_admission)&  # Check that there is value for VL
+        (date_cv_admission - dateadm) <=2 # Check if VL date is less than 2 days(48h)
+      ) ~ "Oui",
+      TRUE ~ "Non"
+    ),
+    vl_ongoing = case_when(
+      (
+        #(age>1) &                     # Exclude exposed babies
+        (histoire_arv ==1)&           # Exclude patients not on ARV (0) & interrupted (2)
+        (jours_arv >=180) &           # Exclude patients with less than 180 days(6M) on ART
+        (datedbutdelaligne_arv - dateadm)>=180 & #Exclude patient with less than 180 days(6M) on ARV line
+        #(dateadm - date_cv_admission) Q/ Comment savoir si la derniere CV etait <3M?
+        (appreciationcv == 0) #&      # Check if VL test is ongoing and no result yet
+        #(date_cv_admission - dateadm) <=2 # Check if VL date is less than 2 days(48h)
+      )~ "Oui",
+      TRUE ~ "Non"
+    ),
+    vl_value = case_when( ## Patient with VL result no matter the protocol
+      !is.na(valeur_cv_admission) ~ "Oui",
+      TRUE ~ "Non"
+    ),
     
-    `%cv_fait` = label_percent(0.1)(cv_fait/cv_adm_elig),
-    tot_cv_fait= sum(!is.na(valeur_cv_admission),na.rm = TRUE),#&             # Get total VL done
-    cd4_adm_elig =  sum(
-                    (age>1)                           # Exclude exposed babies
-                    #((dateadm - date_cd4_admission)> Q/ Comment savoir la dernier CD4 etait <3M?
-                    ,na.rm=TRUE
-                  ),
-    cd4_fait     =   sum(
-                    (age>1) &                         # Exclude exposed babies
-                    #((dateadm - date_cd4_admission)> Q/ Comment savoir la dernier CD4 etait <3M?
-                    !is.na(valeur_cd4admission)&      # Check that there is value for CD$
-                    (date_cd4admission - dateadm) <=2 # Check if CD4 date is less than 2 days(48h)
-                    ,na.rm = TRUE
-                  ),
-    `%cd4_fait`  = label_percent(0.1)(cd4_fait/cd4_adm_elig),
-    lam_adm_elig = sum(
-                    (age>1) &                         # Exclude exposed babies
-                    (valeur_cd4admission < 200) &                # Exclue patients with CD4 >=200  
-                    (t_bencoursdetraitement == 1)     # Eclude patients who are under tb treatment
-                    # Q/ Comment savoir fin traitement TB endéans 1 mois?
-                    ,na.rm=TRUE
-                  ),
-    lam_fait     = sum(
-                    (age>1) &                         # Exclude exposed babies
-                    (valeur_cd4admission < 200) &     # Exclue patients with CD4 >=200  
-                    (t_bencoursdetraitement == 0) &   # Eclude patients who are under tb treatment
-                    # Q/ Comment savoir fin traitement TB endéans 1 mois?
-                    (lam == 0 | lam == 1)             # Check that lam value is pos(0) or neg(1)
-                    ,na.rm=TRUE
-                  ),
-    `%lam_fait`  = label_percent(0.1)(lam_fait/lam_adm_elig),
-    crag_adm_elig = sum(
-                    (age>1) &                        # Exclude exposed babies
-                    (valeur_cd4admission < 200)      # Exclue patients with CD4 >=200  
-                    # Q/ Comment savoir si sous traitement crypto?
-                    # Q/ Comment savoir si sous fluco?
-                    ,na.rm=TRUE
-                  ),
-    crag_fait     = sum(
-                    (age>1) &                           # Exclude exposed babies
-                    (valeur_cd4admission < 200) &                  # Exclue patients with CD4 >=200  
-                    # Q/ Comment savoir si patient sous ?
-                    # Q/ Comment savoir si patient sous ttt crypto?
-                    (sang == 0 | sang == 1)             # Check that crags value is pos(0) or neg(1)
-                    ,na.rm=TRUE
-                  ),
-    `%crag_fait`  = label_percent(0.1)(crag_fait/crag_adm_elig), 
-    died          = sum(
-                    (modedesortie == 3)           # Only pick deceased patients (3)
-                    ,na.rm = TRUE
-                  ),
-    died_lt_48h   = sum(
-                    (modedesortie == 3)&          # Only pick deceased patients (3)
-                    diff_adm_disc <= 2   # Only include discharges within 48h
-                    ,na.rm = TRUE
-                          ),
-    died_gt_48h   = sum(
-                    (modedesortie == 3)&          # Only pick deceased patients (3)
-                    diff_adm_disc > 2    # Only include discharges within 48h
-                    ,na.rm = TRUE
-                  ),
-    `%mortality`  = label_percent(0.1)(died/n_disc),
-    `%mort_lt_48h`= label_percent(0.1)(died_lt_48h/n_disc),
-    `%mort_gt_48h`= label_percent(0.1)(died_gt_48h/n_disc),
+    cd4_elig = "Oui", ## All admissions are supposed to get a CD4
+    cd4_done = case_when(
+      (
+        !is.na(valeur_cd4admission)&      # Check that there is value for CD$
+        (date_cd4admission - dateadm) <=2 # Check if CD4 date is less than 2 days(48h)
+      ) ~ "Oui",
+      TRUE ~ "Non"
+    ),
+    lam_elig = case_when(
+      (
+        (valeur_cd4admission < 200) &     # Include patients with CD4 <200  
+        (t_bencoursdetraitement == 1)     # Include patients who are not under tb ttt (code 1)
+      ) ~ "Oui",
+      TRUE ~ "Non"
+    ),
+    lam_done = case_when(
+      (
+        (valeur_cd4admission < 200) &     # Include patients with CD4 <200   
+        (t_bencoursdetraitement == 1) &   # Include patients who are not under tb ttt (code 1)
+        # Q/ Comment savoir fin traitement TB endéans 1 mois?
+        (lam == 0 | lam == 1)             # Check that lam value is pos(0) or neg(1)
+      ) ~ "Oui",
+      TRUE ~ "Non"
+    ),
+    crags_elig = case_when(
+      (
+         (valeur_cd4admission < 200) &    # Include patients with CD4 <200  
+         (crypo_ttt_adm == 1)   &         # Include patients are not under crypto ttt
+         (fluco_proph == 1)               # Include patients who are not under fluco prophylaxis
+      ) ~ "Oui",
+      TRUE ~ "Non"
+    ),
+    crags_done = case_when(
+      (
+        (valeur_cd4admission < 200) &    # Include patients with CD4 <200  
+        (crypo_ttt_adm == 1)   &         # Include patients are not under crypto ttt
+        (fluco_proph == 1)     &         # Include patients who are not under fluco prophylaxis
+        (sang == 0 | sang == 1)          # Check that crags value is pos(0) or neg(1)
+      ) ~ "Oui",
+      TRUE ~ "Non"
+    ),
+    died = case_when(
+      (
+        (modedesortie == 3)           # Only pick deceased patients (3)
+      ) ~ "Oui",
+      TRUE ~ "Non"
+    ),
+    died_lt48 = case_when(
+      (
+        (modedesortie == 3)&          # Only pick deceased patients (3)
+        diff_adm_disc <= 2            # Only include discharges within 48h
+      ) ~ "Oui",
+      TRUE ~ "Non"
+    ),
+    died_gt48 = case_when(
+      (
+        (modedesortie == 3)&          # Only pick deceased patients (3)
+        diff_adm_disc > 2             # Only include discharges within 48h
+      ) ~ "Oui",
+      TRUE ~ "Non"
+    )
+  ) %>%
+  dplyr::select(
+    ## Re order columns
+    facility,id_patient,period_adm,period_disc,vl_elig,vl_done,cd4_elig,cd4_done,lam_elig,lam_done,crags_elig,crags_done,died,died_lt48,died_gt48,everything()
   )
 
-#summary(biyela_summary)
-
-data_test <- biyela_data %>%
-  filter(
-    (age>1)                           # Exclude exposed babies
-                    #((dateadm - date_cd4_admission)> Q/ Comment savoir la dernier CD4 etait <3M?
-                  
-  )
-#str(biyela_data)
-
-biyela_summary<- biyela_data %>%
+biyela_summary<- biyela_linelist %>%
   
   filter(
     ## Only filter admissions for reporting period
@@ -198,94 +311,58 @@ biyela_summary<- biyela_data %>%
       na.rm = TRUE
     ),
     cv_adm_elig = sum(
-                    #(age>1) &             # Exclude exposed babies
-                    (histoire_arv ==1)&   # Exclude patients not on ARV (0) & interrupted (2)
-                    (jours_arv >180)      # Exclude patients with less than 180 days(6M) on ART
-                    #(dateadm - date_cv_admission) Q/ Comment savoir si la derniere CV etait <3M?
-                    # Q/ Periode interruption doit intervenir?
+                    vl_elig == "Oui"
                     ,na.rm = TRUE
                     ),
     cv_fait    = sum(
-                    #(age>1) &                     # Exclude exposed babies
-                    (histoire_arv ==1)&           # Exclude patients not on ARV (0) & interrupted (2)
-                    (jours_arv >180) &            # Exclude patients with less than 180 days(6M) on ART
-                    #(dateadm - date_cv_admission) Q/ Comment savoir si la derniere CV etait <3M?
-                    !is.na(valeur_cv_admission)&  # Check that there is value for VL
-                    (date_cv_admission - dateadm) <=2 # Check if VL date is less than 2 days(48h)
+                    vl_done == "Oui"
                       ,na.rm = TRUE
                   ),
     cv_encours = sum(
-                    #(age>1) &                     # Exclude exposed babies
-                    (histoire_arv ==1)&           # Exclude patients not on ARV (0) & interrupted (2)
-                    (jours_arv >=180) &           # Exclude patients with less than 180 days(6M) on ART
-                    (datedbutdelaligne_arv - dateadm)>=180 & #Exclude patient with less than 180 days(6M) on ARV line
-                    #(dateadm - date_cv_admission) Q/ Comment savoir si la derniere CV etait <3M?
-                    (appreciationcv == 0) #&      # Check if VL test is ongoing and no result yet
-                    #(date_cv_admission - dateadm) <=2 # Check if VL date is less than 2 days(48h)
+                    vl_ongoing == "Oui"
                       ,na.rm = TRUE
                   ),
     `%cv_fait` = label_percent(0.1)(cv_fait/cv_adm_elig),
     `%cv_encours`= label_percent(0.1)(cv_encours/cv_adm_elig),
     tot_cv_fait= sum(!is.na(valeur_cv_admission),na.rm = TRUE),#&             # Get total VL done
     cd4_adm_elig =  sum(
-                    n()
-                    #(age>1)                           # Exclude exposed babies
-                    #((dateadm - date_cd4_admission)> Q/ Comment savoir la dernier CD4 etait <3M?
+                    cd4_elig == "Oui"
                     ,na.rm=TRUE
                   ),
     cd4_fait     =   sum(
-                    #(age>1) &                         # Exclude exposed babies
-                    #((dateadm - date_cd4_admission)> Q/ Comment savoir la dernier CD4 etait <3M?
-                    !is.na(valeur_cd4admission)&      # Check that there is value for CD$
-                    (date_cd4admission - dateadm) <=2 # Check if CD4 date is less than 2 days(48h)
+                    cd4_done == "Oui"
                     ,na.rm = TRUE
                   ),
     `%cd4_fait`  = label_percent(0.1)(cd4_fait/cd4_adm_elig),
-    cd4_lt_200   =  sum((cd4_fait < 200),na.rm = TRUE),
+    cd4_lt_200   =  sum((valeur_cd4admission < 200),na.rm = TRUE),
     lam_adm_elig = sum(
-                    #(age>1) &                         # Exclude exposed babies
-                    (valeur_cd4admission < 200) &     # Exclue patients with CD4 >=200  
-                    (t_bencoursdetraitement == 0)     # Eclude patients who are under tb treatment
-                    # Q/ Comment savoir fin traitement TB endéans 1 mois?
+                    lam_elig == "Oui"
                     ,na.rm=TRUE
                   ),
     lam_fait     = sum(
-                    #(age>1) &                        # Exclude exposed babies
-                    (valeur_cd4admission < 200) &     # Exclue patients with CD4 >=200  
-                    (t_bencoursdetraitement == 0) &   # Eclude patients who are under tb treatment
-                    # Q/ Comment savoir fin traitement TB endéans 1 mois?
-                    (lam == 0 | lam == 1)             # Check that lam value is pos(0) or neg(1)
+                    lam_done == "Oui"
                     ,na.rm=TRUE
                   ),
     `%lam_fait`  = label_percent(0.1)(lam_fait/lam_adm_elig),
     crag_adm_elig = sum(
-                    #(age>1)    &                     # Exclude exposed babies
-                    (valeur_cd4admission < 200)       # Exclude patients with CD4 >=200  
-                    # Q/ Comment savoir si sous traitement crypto?
-                    # Q/ Comment savoir si sous fluco?
+                    crags_elig == "Oui"
                     ,na.rm=TRUE
                   ),
     crag_fait     = sum(
-                    #(age>1) &                          # Exclude exposed babies
-                    (valeur_cd4admission < 200) &       # Exclude patients with CD4 >=200  
-                    # Q/ Comment savoir si patient sous ?
-                    # Q/ Comment savoir si patient sous ttt crypto?
-                    (sang == 0 | sang == 1)             # Check that crags value is pos(0) or neg(1)
+                    crags_done == "Oui"
                     ,na.rm=TRUE
                   ),
     `%crag_fait`  = label_percent(0.1)(crag_fait/crag_adm_elig),
     died          = sum(
-                    (modedesortie == 3)           # Only pick deceased patients (3)
+                    died == "Oui"
                     ,na.rm = TRUE
                   ),
     died_lt_48h   = sum(
-                    (modedesortie == 3)&          # Only pick deceased patients (3)
-                    diff_adm_disc <= 2            # Only include discharges within 48h
+                    died_lt48 == "Oui"
                     ,na.rm = TRUE
                           ),
     died_gt_48h   = sum(
-                    (modedesortie == 3)&          # Only pick deceased patients (3)
-                    diff_adm_disc > 2             # Only include discharges within 48h
+                    died_gt48 == "Oui"
                     ,na.rm = TRUE
                   ),
     `%mortality`  = label_percent(0.1)(died/n_disc),
@@ -299,11 +376,11 @@ wb1 <- createWorkbook()
 
 ## Add worksheets
 openxlsx::addWorksheet(wb1, "Biyela", gridLines = TRUE)
-openxlsx::addWorksheet(wb1, "Luyindu", gridLines = TRUE)
+openxlsx::addWorksheet(wb1, "details", gridLines = TRUE)
 
 ## write dataframes to worksheets
 openxlsx::writeData(wb1, sheet = 1, biyela_summary, borderStyle = "thin",withFilter = TRUE)
-openxlsx::writeData(wb1, sheet = 2, luyindu_summary, borderStyle = "thin",withFilter = TRUE)
+openxlsx::writeData(wb1, sheet = 2, biyela_linelist, borderStyle = "thin",withFilter = TRUE)
 
 ##Save and export excel 
 openxlsx::saveWorkbook(wb1, here(output_folder,"data_summary_ipd.xlsx"), overwrite = TRUE)

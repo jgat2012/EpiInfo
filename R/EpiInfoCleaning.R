@@ -117,20 +117,20 @@ biyela    <- biyela %>%
 luyindu_data <- luyindu %>%
   mutate(
     facility             = "luyindu",
-    dateadm              = parse_date(paste(anne,mois,jour,sep = "-"),"%Y-%m-%d"),
+    dateadm              = parse_date_time(paste(anne,mois,jour,sep = "-"),"%Y-%m-%d"),
     age                  = parse_number(as.character(age)),
     stade_oms            = parse_number(as.character(stade_oms)),
     glasgow              = parse_number(as.character(glasgow)),
     creatinine           = parse_number(as.character(creatinine)),
-    date_cd4admission    = parse_date(as.character(date_cd4admission),"%Y-%m-%d"),
+    date_cd4admission    = parse_date_time(as.character(date_cd4admission),"%Y-%m-%d"),
     valeur_cd4admission  = parse_number(as.character(valeur_cd4admission)),
-    date_cv_admission    = parse_date(as.character(date_cv_admission),"%Y-%m-%d"),
+    date_cv_admission    = parse_date_time(as.character(date_cv_admission),"%Y-%m-%d"),
     valeur_cv_admission  = parse_number(as.character(valeur_cv_admission)),
-    datediagnostic       = parse_date(as.character(datediagnostic),"%Y-%m-%d"), # Date diagnostic VIH
-    datedbutdelaligne_arv= parse_date(as.character(datedbutdelaligne_arv),"%Y-%m-%d"),
-    datedbut_arv         = parse_date(as.character(datedbut_arv),"%Y-%m-%d"),
+    datediagnostic       = parse_date_time(as.character(datediagnostic),"%Y-%m-%d"), # Date diagnostic VIH
+    datedbutdelaligne_arv= parse_date_time(as.character(datedbutdelaligne_arv),"%Y-%m-%d"),
+    datedbut_arv         = parse_date_time(as.character(datedbut_arv),"%Y-%m-%d"),
     jours_arv            = (dateadm - datedbut_arv),    
-    datesortie           = parse_date(as.character(datesortie),"%Y-%m-%d"),
+    datesortie           = parse_date_time(as.character(datesortie),"%Y-%m-%d"),
     period_adm           = parse_number(format(dateadm, "%Y.%m")),
     period_disc          = parse_number(format(datesortie, "%Y.%m")),
     quar_adm             = quarter(dateadm, with_year = T),
@@ -154,23 +154,25 @@ luyindu_data <- luyindu %>%
 biyela_data <- biyela %>%
   mutate(
     facility             = "biyela",
-    dateadm              = parse_date(paste(anne,mois,jour,sep = "-"),"%Y-%m-%d"),
+    dateadm              = parse_date_time(paste(anne,mois,jour,sep = "-"),"%Y-%m-%d"),
     age                  = parse_number(as.character(age)),
     stade_oms            = parse_number(as.character(stade_oms)),
     sang                 = crag_sang,
     csf                  = crag_csf,
     glasgow              = parse_number(as.character(glasgow)),
     creatinine           = parse_number(as.character(creatinineml)),
-    date_cd4admission    = parse_date(as.character(date_cd4admission),"%Y-%m-%d"),
+    date_cd4admission    = parse_date_time(as.character(date_cd4admission),"%Y-%m-%d"),
     valeur_cd4admission  = parse_number(as.character(valeur_cd4admission)),
-    date_cv_admission    = parse_date(as.character(date_cv_admission),"%Y-%m-%d"),
+    date_cv_admission    = parse_date_time(as.character(date_cv_admission),"%Y-%m-%d"),
     valeur_cv_admission  = parse_number(as.character(valeur_cv_admission)),
     appreciationcv       = parse_number(as.character(appreciationcv)),
-    datediagnostic       = parse_date(as.character(datediagnostic1),"%Y-%m-%d"), # Date diagnostic VIH
-    datedbutdelaligne_arv= parse_date(as.character(datedbutdelaligne_arv),"%Y-%m-%d"),
-    datedbut_arv         = parse_date(as.character(datedbut_arv),"%Y-%m-%d"),
+    datediagnostic       = parse_date_time(as.character(datediagnostic1),"%Y-%m-%d"), # Date diagnostic VIH
+    datedbutdelaligne_arv= parse_date_time(as.character(datedbutdelaligne_arv),"%Y-%m-%d"),
+    datedbut_arv         = parse_date_time(as.character(datedbut_arv),"%Y-%m-%d"),
+    crypo_ttt_adm        = cryptoencoursdetraitementladmission,
+    fluco_proph          = prohylaxieflucoladmission,
     jours_arv            = (dateadm - datedbut_arv),    
-    datesortie           = parse_date(as.character(datesortie),"%Y-%m-%d"),
+    datesortie           = parse_date_time(as.character(datesortie),"%Y-%m-%d"),
     period_adm           = parse_number(format(dateadm, "%Y.%m")),
     period_disc          = parse_number(format(datesortie, "%Y.%m")),
     quar_adm             = quarter(dateadm, with_year = T),
@@ -187,7 +189,7 @@ biyela_data <- biyela %>%
   select(
     facility,id_patient,origine,dateadm,period_adm,period_disc,diff_adm_disc,quar_adm,quar_disc,sexe,age,stade_oms,maladearrivmort,lam,sang,csf,xpert,
     date_cd4admission,valeur_cd4admission,date_cv_admission,valeur_cv_admission,appreciationcv,datediagnostic,
-    histoire_arv,datedbut_arv,jours_arv,datedbutdelaligne_arv,lignedes_ar_vencours,t_bencoursdetraitement,
+    histoire_arv,datedbut_arv,jours_arv,datedbutdelaligne_arv,lignedes_ar_vencours,t_bencoursdetraitement,crypo_ttt_adm,fluco_proph,
     datesortie,modedesortie
   )
 
